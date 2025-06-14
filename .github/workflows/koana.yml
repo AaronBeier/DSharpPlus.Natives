@@ -36,7 +36,9 @@ jobs:
             echo ""
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             sudo apt update
-            sudo apt install cmake gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libssl-dev
+            sudo dpkg --add-architecture arm64
+            sudo apt update
+            sudo apt install cmake gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libssl-dev libssl-dev:arm64
             for arch in x64 ARM64; do
               mkdir -p output/$arch
               mkdir build-$arch
