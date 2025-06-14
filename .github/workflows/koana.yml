@@ -33,7 +33,7 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-
+            echo ""
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             sudo apt update
             sudo apt install cmake gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libssl-dev
@@ -51,7 +51,7 @@ jobs:
               cd ..
             done
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-
+            echo ""
           fi
 
       - name: Publish Artifacts
