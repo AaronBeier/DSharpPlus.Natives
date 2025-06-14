@@ -1,0 +1,175 @@
+name: Build koana
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/koana.yml'
+
+env:
+  COMMON_CMAKE_FLAGS: "-DCMAKE_BUILD_TYPE=Release"
+
+jobs:
+  build:
+    name: Build koana
+    runs-on: ${{ matrix.os }}
+
+    outputs:
+      version: ${{ steps.print-version.outputs.version }}
+
+    strategy:
+      fail-fast: false # Run the other two OSs even if one fails
+      matrix:
+        os: [ windows-latest, ubuntu-latest, macos-latest ]
+          
+    steps:
+      - name: Clone koana repo
+        uses: actions/checkout@v4.2.2
+        with:
+          repository: DSharpPlus/libkoana
+      
+      - name: Build koana
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            for arch in x64 ARM64; do # We dont want Win32
+
+            done
+          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            for arch in x64 ARM64; do
+              mkdir -p output/$arch
+              mkdir build-$arch
+              cd build-$arch
+              if [[ "$arch" == "ARM64" ]]; then
+                sudo apt update
+                sudo apt install cmake gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+                cmake $COMMON_CMAKE_FLAGS -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ ..
+              else
+                cmake $COMMON_CMAKE_FLAGS ..
+              fi
+              cmake --build . -j 4
+              cp libopus.so ../output/$arch/libopus.so
+              cd ..
+            done
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+
+          fi
+
+      - name: Publish Artifacts
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: koana-${{ matrix.os }}
+          path: output
+          compression-level: 9 # Prefer smaller downloads over a shorter workflow runtime
+
+  build-musl:
+    name: Build koana (alpine-musl)
+    runs-on: ubuntu-latest
+            
+    # We sadly cant use a matrix to run x64 and ARM64, because it would give use 2 artifacts
+    steps:
+      - name: Clone koana repo
+        uses: actions/checkout@v4.2.2
+        with:
+          repository: DSharpPlus/libkoana
+        
+      - name: Setup Alpine Linux for x64
+        uses: jirutka/setup-alpine@v1
+        with:
+          packages: >
+            build-base
+            cmake
+            git
+            make
+            gcc
+            g++
+            openssl
+        
+      - name: Build koana for x64 (musl)
+        shell: alpine.sh {0}
+        run: |
+          mkdir -p output/x64
+          mkdir build-x64
+          cd build-x64
+          cmake $COMMON_CMAKE_FLAGS ..
+          cmake --build . -j 4
+          cp libkoana.so ../output/x64/libkoana.musl.so
+          cd ..
+              
+      - name: Setup Alpine Linux for ARM64
+        uses: jirutka/setup-alpine@v1
+        with:
+          arch: aarch64
+          packages: >
+            build-base
+            cmake
+            git
+            make
+            gcc
+            g++
+            openssl
+          
+      - name: Build koana for ARM64 (musl)
+        shell: alpine.sh {0}
+        run: |
+          mkdir -p output/ARM64
+          mkdir build-ARM64
+          cd build-ARM64
+          cmake $COMMON_CMAKE_FLAGS ..
+          cmake --build . -j 4
+          cp libkoana.so ../output/ARM64/libkoana.musl.so
+          cd ..
+          
+      - name: Publish Artifacts
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: koana-alpine-latest
+          path: output
+          compression-level: 9 # Prefer smaller downloads over a shorter workflow runtime
+        
+  publish-nuget:
+    needs: [build, build-musl]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CSPROJ files
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: temp
+          pattern: koana-*
+          merge-multiple: true
+
+      - name: Move Artifacts
+        run: |
+          mkdir -p lib/koana/win-x64/native
+          mkdir -p lib/koana/linux-x64/native
+          mkdir -p lib/koana/win-arm64/native
+          mkdir -p lib/koana/linux-arm64/native
+          mkdir -p lib/koana/osx/native
+          mkdir -p lib/koana/linux-musl-x64/native
+          mkdir -p lib/koana/linux-musl-arm64/native
+          cp temp/x64/libkoana.dll lib/koana/win-x64/native/libkoana.dll
+          cp temp/x64/libkoana.so lib/koana/linux-x64/native/libkoana.so
+          cp temp/ARM64/libkoana.dll lib/koana/win-arm64/native/libkoana.dll
+          cp temp/ARM64/libkoana.so lib/koana/linux-arm64/native/libkoana.so
+          cp temp/libkoana.dylib lib/koana/osx/native/libkoana.dylib
+          cp temp/x64/libkoana.musl.so lib/koana/linux-musl-x64/native/libkoana.so
+          cp temp/ARM64/libkoana.musl.so lib/koana/linux-musl-arm64/native/libkoana.so
+
+      - name: Pack DSharpPlus.Natives.koana
+        shell: bash
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          VERSION="${VERSION:1}"
+          dotnet pack ./build/DSharpPlus.Natives.koana.csproj -c Release -p:Version="$VERSION.${{ github.run_number }}"
+          dotnet nuget push "artifacts/**" --skip-duplicate -k "$NUGET_API_KEY" -s https://api.nuget.org/v3/index.json
