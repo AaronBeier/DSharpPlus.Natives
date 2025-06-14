@@ -33,17 +33,15 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            for arch in x64 ARM64; do # We dont want Win32
 
-            done
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            sudo apt update
+            sudo apt install cmake gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libssl-dev
             for arch in x64 ARM64; do
               mkdir -p output/$arch
               mkdir build-$arch
               cd build-$arch
               if [[ "$arch" == "ARM64" ]]; then
-                sudo apt update
-                sudo apt install cmake gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
                 cmake $COMMON_CMAKE_FLAGS -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ ..
               else
                 cmake $COMMON_CMAKE_FLAGS ..
@@ -85,6 +83,7 @@ jobs:
             gcc
             g++
             openssl
+            openssl-dev
         
       - name: Build koana for x64 (musl)
         shell: alpine.sh {0}
@@ -109,6 +108,7 @@ jobs:
             gcc
             g++
             openssl
+            openssl-dev
           
       - name: Build koana for ARM64 (musl)
         shell: alpine.sh {0}
