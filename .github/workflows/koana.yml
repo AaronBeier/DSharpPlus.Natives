@@ -28,12 +28,19 @@ jobs:
         uses: actions/checkout@v4.2.2
         with:
           repository: DSharpPlus/libkoana
+
+      - name: Setup Perl and 
       
       - name: Build koana
         shell: bash
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            echo ""
+            choco install strawberryperl nasm
+            git clone https://github.com/openssl/openssl
+            cd openssl
+            git checkout openssl-3.5.0
+            perl Configure VC-WIN64A
+            nmake
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             sudo apt update
             sudo dpkg --add-architecture arm64
