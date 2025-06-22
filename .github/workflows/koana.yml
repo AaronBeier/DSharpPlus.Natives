@@ -37,7 +37,7 @@ jobs:
             git clone https://github.com/openssl/openssl
             cd openssl
             git checkout openssl-3.5.0
-            C:\Strawberry\perl\bin\perl.exe Configure VC-WIN64A
+            C:\\Strawberry\\perl\\bin\\perl.exe Configure VC-WIN64A
             nmake
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             sudo apt update
