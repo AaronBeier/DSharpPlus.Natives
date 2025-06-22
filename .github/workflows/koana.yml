@@ -34,7 +34,7 @@ jobs:
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             choco install nasm
-            PATH="$PATH:C:\\Program Files\\NASM"
+            PATH="$PATH:C\:\\Program Files\\NASM"
             git clone https://github.com/openssl/openssl
             cd openssl
             git checkout openssl-3.5.0
