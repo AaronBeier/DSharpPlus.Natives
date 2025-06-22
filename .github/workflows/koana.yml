@@ -43,6 +43,9 @@ jobs:
           git checkout openssl-3.5.0
           C:\Strawberry\perl\bin\perl.exe Configure VC-WIN64A
           nmake
+          cd ..
+          cmake -B build -DOPENSSL_ROOT_DIR=".\openssl\" -DOPENSSL_CRYPTO_LIBRARY=".\openssl\libcrypto.lib" -DOPENSSL_INCLUDE_DIR=".\openssl\include\"
+          cmake --build build --config Release --parallel
       
       - name: Build koana
         if: matrix.os != 'windows-latest'
