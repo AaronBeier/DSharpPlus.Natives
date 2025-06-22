@@ -34,11 +34,10 @@ jobs:
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             choco install strawberryperl nasm
-            cpan Locale::Maketext::Simple
             git clone https://github.com/openssl/openssl
             cd openssl
             git checkout openssl-3.5.0
-            perl Configure VC-WIN64A
+            C:\Strawberry\perl\bin\perl.exe Configure VC-WIN64A
             nmake
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             sudo apt update
