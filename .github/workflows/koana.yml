@@ -29,6 +29,9 @@ jobs:
         with:
           repository: DSharpPlus/libkoana
 
+      - name: Setup VS build tools
+        uses: seanmiddleditch/gha-setup-vsdevenv@v5
+
       - name: Build koana on Windows
         if: matrix.os == 'windows-latest'
         shell: pwsh
