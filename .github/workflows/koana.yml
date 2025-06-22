@@ -29,23 +29,23 @@ jobs:
         with:
           repository: DSharpPlus/libkoana
 
-      - name: Install NASM on Windows
+      - name: Build koana on Windows
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           choco install nasm
-          [Environment]::SetEnvironmentVariable('Path', "$($env:Path);C:\Program Files\NASM\", 'Machine')
+          $env:PATH += ";C:\Program Files\NASM"
+          git clone https://github.com/openssl/openssl
+          cd openssl
+          git checkout openssl-3.5.0
+          C:\Strawberry\perl\bin\perl.exe Configure VC-WIN64A
+          nmake
       
       - name: Build koana
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            git clone https://github.com/openssl/openssl
-            cd openssl
-            git checkout openssl-3.5.0
-            C:\\Strawberry\\perl\\bin\\perl.exe Configure VC-WIN64A
-            nmake
-          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             sudo apt update
             sudo dpkg --add-architecture arm64
             sudo apt update
