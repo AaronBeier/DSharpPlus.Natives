@@ -34,7 +34,7 @@ jobs:
         shell: pwsh
         run: |
           choco install nasm
-          Install-ChocolateyPath "$($env:SystemDrive)\Program Files\NASM\" -PathType 'Machine'
+          [Environment]::SetEnvironmentVariable('Path', "$($env:Path);C:\Program Files\NASM\", 'Machine')
       
       - name: Build koana
         shell: bash
