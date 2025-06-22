@@ -28,13 +28,18 @@ jobs:
         uses: actions/checkout@v4.2.2
         with:
           repository: DSharpPlus/libkoana
+
+      - name: Install NASM on Windows
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          choco install nasm
+          Install-ChocolateyPath "$($env:SystemDrive)\Program Files\NASM\" -PathType 'Machine'
       
       - name: Build koana
         shell: bash
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            choco install nasm
-            PATH="$PATH:C\:\\Program Files\\NASM"
             git clone https://github.com/openssl/openssl
             cd openssl
             git checkout openssl-3.5.0
